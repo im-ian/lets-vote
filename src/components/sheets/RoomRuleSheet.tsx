@@ -7,8 +7,14 @@ import {
 import type { RoomRules } from "@/types/room";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { NativeSelect, NativeSelectOption } from "../ui/native-select";
 import { Switch } from "../ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface RoomRuleSheetProps {
   rules: RoomRules;
@@ -33,20 +39,23 @@ function RoomRuleSheet({
         <div className="flex flex-col gap-2 px-4 space-y-4">
           <div className="grid w-full max-w-sm items-center gap-3">
             <Label htmlFor="voteType">투표 방식</Label>
-            <NativeSelect
-              id="voteType"
-              className="w-full"
+            <Select
               value={rules.voteType}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 onChangeRules({
                   ...rules,
-                  voteType: e.target.value as RoomRules["voteType"],
+                  voteType: value as RoomRules["voteType"],
                 })
               }
             >
-              <NativeSelectOption value="user">유저</NativeSelectOption>
-              <NativeSelectOption value="custom">커스텀</NativeSelectOption>
-            </NativeSelect>
+              <SelectTrigger className="w-full" id="voteType">
+                <SelectValue placeholder="투표 방식 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">유저</SelectItem>
+                <SelectItem value="custom">커스텀</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid w-full max-w-sm items-center gap-3">
