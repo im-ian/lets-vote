@@ -166,7 +166,14 @@ io.on("connection", async (socket) => {
     const roomIndex = rooms.findIndex((room) => room.id === roomId);
     if (roomIndex === -1) return;
 
+    const previousVoteType = rooms[roomIndex].rules.voteType;
     rooms[roomIndex].rules = rules;
+
+    // voteType이 변경되면 기존 투표 데이터 초기화
+    if (previousVoteType !== rules.voteType) {
+      rooms[roomIndex].vote = {};
+    }
+
     io.to(roomId).emit(SocketEvent.SET_ROOM_RULES, rules);
   });
 

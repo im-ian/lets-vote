@@ -1,6 +1,6 @@
 import { useParams } from "@tanstack/react-router";
 import { CheckIcon, CogIcon, UsersIcon, ZapIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Confetti from "react-confetti";
 import { toast } from "sonner";
 import Container from "./components/container";
@@ -29,7 +29,6 @@ function RoomPage() {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
   const [isUserListSheetOpen, setIsUserListSheetOpen] = useState(false);
   const [isRoomRuleSheetOpen, setIsRoomRuleSheetOpen] = useState(false);
@@ -37,7 +36,18 @@ function RoomPage() {
     useState(false);
   const [isVoteWinnerModalOpen, setIsVoteWinnerModalOpen] = useState(false);
 
-  const previousRules = useRef<RoomRules | null>(null);
+  const voteOptions = useMemo(() => {
+    if (!room) return [];
+
+    switch (room.rules.voteType) {
+      case "user":
+        return users.map((u) => u.nickname);
+      case "custom":
+        return Object.keys(room.vote || {});
+      default:
+        return [];
+    }
+  }, [room, users]);
 
   const {
     isRunning: isTimerRunning,
@@ -50,30 +60,22 @@ function RoomPage() {
 
   const isAdmin = socket?.id && socket.id === room?.creator.id;
 
-  function updateRoomRules(
-    rules: RoomRules,
-    currentUsers: User[],
-    initialVoteOptions?: string[]
-  ) {
-    setRoom((prev) => (prev ? { ...prev, rules } : prev));
-
-    if (previousRules.current?.voteType !== rules.voteType) {
-      if (rules.voteType === "user") {
-        setVoteOptions(currentUsers.map((u) => u.nickname));
-      } else if (initialVoteOptions !== undefined) {
-        // 초기 투표 옵션이 제공된 경우 (custom 등)
-        setVoteOptions(initialVoteOptions);
-      } else {
-        setVoteOptions([]);
-      }
-    }
-
-    previousRules.current = rules;
-  }
-
   function handleSetRoomRules(rules: RoomRules) {
     if (!socket || !isConnected) return;
-    updateRoomRules(rules, users);
+
+    // Admin도 voteType 변경 시 vote 초기화
+    setRoom((prev) => {
+      if (!prev) return prev;
+
+      const shouldResetVote = prev.rules.voteType !== rules.voteType;
+
+      return {
+        ...prev,
+        rules,
+        vote: shouldResetVote ? {} : prev.vote,
+      };
+    });
+
     socket.emit(SocketEvent.SET_ROOM_RULES, roomId, rules);
   }
 
@@ -121,14 +123,6 @@ function RoomPage() {
     }) {
       toast(`${user.nickname}님이 입장하셨습니다.`);
       setUsers(allUsers);
-
-      // voteType이 'user'일 때 투표 옵션도 업데이트
-      setRoom((prevRoom) => {
-        if (prevRoom?.rules.voteType === "user") {
-          setVoteOptions(allUsers.map((u) => u.nickname));
-        }
-        return prevRoom;
-      });
     }
 
     function handleGetRoomInfo({
@@ -139,13 +133,8 @@ function RoomPage() {
       users: User[];
     }) {
       const deserializedRoom = serde.deserializeRoom(room);
-
-      // vote 객체의 키들을 투표 옵션으로 추출 (custom, user 타입에서 사용)
-      const currentVoteOptions = Object.keys(deserializedRoom.vote || {});
-
       setRoom(deserializedRoom);
       setUsers(users);
-      updateRoomRules(deserializedRoom.rules, users, currentVoteOptions);
     }
 
     function handleVote(vote: SerializeVote) {
@@ -155,7 +144,18 @@ function RoomPage() {
     }
 
     function handleSetRoomRulesFromServer(rules: RoomRules) {
-      updateRoomRules(rules, users); // 서버 룰 변경 시 현재 users 사용
+      setRoom((prev) => {
+        if (!prev) return prev;
+
+        // voteType이 변경되면 vote 초기화
+        const shouldResetVote = prev.rules.voteType !== rules.voteType;
+
+        return {
+          ...prev,
+          rules,
+          vote: shouldResetVote ? {} : prev.vote,
+        };
+      });
     }
 
     function handleVoteStart() {
@@ -166,7 +166,17 @@ function RoomPage() {
     }
 
     function handleVoteAddOption(option: string) {
-      setVoteOptions((prev) => [...prev, option]);
+      // custom 타입일 때 room.vote에 새 옵션 추가
+      setRoom((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          vote: {
+            ...prev.vote,
+            [option]: new Set(),
+          },
+        };
+      });
     }
 
     socket.on(SocketEvent.JOIN_ROOM, handleJoinRoom);
