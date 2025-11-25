@@ -2,13 +2,13 @@ import type { Room, SerializeRoom, SerializeVote, Vote } from "@/types/room";
 
 function serializeVote(vote: Vote): SerializeVote {
   return Object.fromEntries(
-    Object.entries(vote).map(([k, v]) => [k, Array.from(v)]),
+    Object.entries(vote).map(([k, v]) => [k, Array.from(v)])
   );
 }
 
 function deserializeVote(vote: SerializeVote): Vote {
   return Object.fromEntries(
-    Object.entries(vote).map(([k, v]) => [k, new Set(v)]),
+    Object.entries(vote).map(([k, v]) => [k, new Set(v)])
   );
 }
 

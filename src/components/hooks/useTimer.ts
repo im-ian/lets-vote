@@ -19,26 +19,29 @@ export function useTimer(initialSeconds: number, onComplete?: () => void) {
     setIsRunning(false);
   }, []);
 
-  const start = useCallback((fromSeconds?: number) => {
-    stop(); // 중복 시작 방지
-    if (fromSeconds !== undefined) {
-      setSeconds(fromSeconds);
-    }
-    setIsRunning(true);
-    intervalRef.current = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          stop();
-          // 타이머 완료 시 콜백 호출
-          if (onCompleteRef.current) {
-            onCompleteRef.current();
+  const start = useCallback(
+    (fromSeconds?: number) => {
+      stop(); // 중복 시작 방지
+      if (fromSeconds !== undefined) {
+        setSeconds(fromSeconds);
+      }
+      setIsRunning(true);
+      intervalRef.current = setInterval(() => {
+        setSeconds((prev) => {
+          if (prev <= 1) {
+            stop();
+            // 타이머 완료 시 콜백 호출
+            if (onCompleteRef.current) {
+              onCompleteRef.current();
+            }
+            return 0;
           }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, [stop]);
+          return prev - 1;
+        });
+      }, 1000);
+    },
+    [stop]
+  );
 
   const reset = useCallback(() => {
     stop();
