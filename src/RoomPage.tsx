@@ -283,6 +283,12 @@ function RoomPage() {
             </div>
           </div>
 
+          <div className="mt-4 text-sm text-muted-foreground">
+            {isTimerRunning
+              ? "시간 내에 항목을 선택해주세요."
+              : "투표가 종료되었습니다."}
+          </div>
+
           <div className="flex flex-col gap-2 mt-4">
             {voteOptions.map((option) => {
               const isSelected = selectedOption.includes(option);
