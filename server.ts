@@ -5,12 +5,7 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import serde from "./src/lib/serde";
 import { SocketEvent } from "./src/lib/socket";
-import type {
-  Room,
-  RoomRules,
-  RoomWithUserCount,
-  Vote,
-} from "./src/types/room";
+import type { Room, RoomRules, RoomWithUserCount } from "./src/types/room";
 import type { User } from "./src/types/user";
 
 const app = express();
@@ -126,6 +121,7 @@ io.on("connection", async (socket) => {
   socket.on(SocketEvent.GET_ROOM_INFO, async (roomId) => {
     const sockets = await io.in(roomId).fetchSockets();
     const room = rooms.find((room) => room.id === roomId);
+    if (!room) return;
 
     io.to(roomId).emit(SocketEvent.GET_ROOM_INFO, {
       users: sockets.map((socket) => ({
