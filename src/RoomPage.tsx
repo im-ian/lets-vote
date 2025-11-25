@@ -145,12 +145,25 @@ function RoomPage() {
     function handleLeaveRoom({
       leftUser,
       users: allUsers,
+      room: updatedRoom,
     }: {
       leftUser: User;
       users: User[];
+      room?: SerializeRoom;
     }) {
       toast(`${leftUser.nickname}님이 퇴장하셨습니다.`);
       setUsers(allUsers);
+
+      // 어드민이 변경된 경우 room 정보 업데이트
+      if (updatedRoom) {
+        const deserializedRoom = serde.deserializeRoom(updatedRoom);
+        setRoom(deserializedRoom);
+
+        // 새 어드민에게 알림
+        if (socket?.id === deserializedRoom.creator.id) {
+          toast.success("새로운 방장이 되었습니다!");
+        }
+      }
     }
 
     function handleGetRoomInfo({
@@ -386,6 +399,7 @@ function RoomPage() {
       )}
 
       <RoomUserListSheet
+        room={room}
         users={users}
         open={isUserListSheetOpen}
         onOpenChange={setIsUserListSheetOpen}

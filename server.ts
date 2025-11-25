@@ -53,6 +53,10 @@ const getRoomList = async (): Promise<RoomWithUserCount[]> => {
 
 // 특정 방의 유저 목록을 업데이트하는 헬퍼 함수
 const updateRoomUsers = async (roomId: string, leftUserId: string) => {
+  const roomIndex = rooms.findIndex((r) => r.id === roomId);
+  if (roomIndex === -1) return;
+
+  const room = rooms[roomIndex];
   const sockets = await io.in(roomId).fetchSockets();
   const roomUsers = sockets.map((s) => ({
     id: s.id,
@@ -64,10 +68,23 @@ const updateRoomUsers = async (roomId: string, leftUserId: string) => {
     nickname: users[leftUserId]?.nickname || "익명",
   };
 
-  io.to(roomId).emit(SocketEvent.LEAVE_ROOM, {
-    leftUser,
-    users: roomUsers,
-  });
+  // 나간 유저가 어드민이고 방에 남은 사람이 있으면 다음 사람을 어드민으로 지정
+  if (room.creator.id === leftUserId && roomUsers.length > 0) {
+    room.creator = roomUsers[0];
+    console.log(`New admin for room ${room.name}: ${roomUsers[0].nickname}`);
+
+    // 업데이트된 방 정보 전송
+    io.to(roomId).emit(SocketEvent.LEAVE_ROOM, {
+      leftUser,
+      users: roomUsers,
+      room: serde.serializeRoom(room),
+    });
+  } else {
+    io.to(roomId).emit(SocketEvent.LEAVE_ROOM, {
+      leftUser,
+      users: roomUsers,
+    });
+  }
 };
 
 // 빈 방들을 정리하는 헬퍼 함수

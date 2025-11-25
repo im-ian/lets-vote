@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import dayjs from "dayjs";
-import { PlusIcon, UsersIcon, ZapIcon } from "lucide-react";
+import { CrownIcon, PlusIcon, UsersIcon, ZapIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Container from "./components/container";
@@ -125,7 +125,13 @@ function RoomList() {
               <CardHeader>
                 <CardTitle>{room.name}</CardTitle>
                 <CardDescription>
-                  {room.creator.nickname}님이 생성
+                  <div className="flex items-center gap-2">
+                    <CrownIcon
+                      className="size-4 text-yellow-500"
+                      fill="currentColor"
+                    />{" "}
+                    {room.creator.nickname}
+                  </div>
                 </CardDescription>
               </CardHeader>
               <CardFooter>
