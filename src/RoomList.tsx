@@ -93,11 +93,13 @@ function RoomList() {
             <Button onClick={() => setIsRoomCreateModalOpen(true)}>
               <PlusIcon />방 만들기
             </Button>
-            <Button
-              className={cn(isConnected ? "bg-yellow-500" : "bg-white-500")}
-              size="icon"
-            >
-              <ZapIcon />
+            <Button variant={"outline"} size="icon">
+              <ZapIcon
+                fill={isConnected ? "currentColor" : "none"}
+                className={cn(
+                  isConnected ? "text-yellow-500" : "text-gray-500"
+                )}
+              />
             </Button>
           </div>
         </div>
