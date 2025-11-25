@@ -6,6 +6,7 @@ import type { RoomRules, Vote } from "@/types/room";
 import type { User } from "@/types/user";
 
 interface VoteWinnerModalProps {
+  subject: string;
   rules?: RoomRules;
   users: User[];
   vote?: Vote;
@@ -14,11 +15,12 @@ interface VoteWinnerModalProps {
 }
 
 export function VoteWinnerModal({
+  subject,
+  rules,
   users,
   vote,
   open,
   onOpenChange,
-  rules,
 }: VoteWinnerModalProps) {
   // 안전하게 기본값 설정
   const safeVote: Vote = vote ?? {};
@@ -38,7 +40,7 @@ export function VoteWinnerModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>투표 결과</DialogTitle>
+        <DialogTitle>{subject}</DialogTitle>
 
         <div className="grid gap-4 mt-6 text-center">
           <TrophyIcon size={60} className="text-yellow-500 m-auto" />
@@ -83,7 +85,9 @@ export function VoteWinnerModal({
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`text-sm font-medium ${isWinner ? "text-yellow-600" : "text-foreground"}`}
+                          className={`text-sm font-medium ${
+                            isWinner ? "text-yellow-600" : "text-foreground"
+                          }`}
                         >
                           {name}
                         </div>
@@ -101,7 +105,7 @@ export function VoteWinnerModal({
                           .map(
                             (uid) =>
                               users.find((u) => u.id === uid)?.nickname ??
-                              "익명",
+                              "익명"
                           )
                           .join(", ")}
                       </div>

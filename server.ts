@@ -147,6 +147,7 @@ io.on("connection", async (socket) => {
     rooms.push({
       id: uuid,
       name: roomName,
+      subject: "투표 주제를 입력해주세요.",
       password: roomPassword,
       creator: {
         id: socket.id,
@@ -232,6 +233,14 @@ io.on("connection", async (socket) => {
       serde.serializeVote(room.vote),
       options
     );
+  });
+
+  socket.on(SocketEvent.SET_ROOM_SUBJECT, async (roomId, subject) => {
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    rooms[roomIndex].subject = subject;
+    io.to(roomId).emit(SocketEvent.SET_ROOM_SUBJECT, subject);
   });
 
   socket.on(SocketEvent.SET_ROOM_RULES, async (roomId, rules) => {

@@ -14,6 +14,7 @@ export const SocketEvent = {
   GET_ROOM_LIST: "get-room-list",
   SET_NICKNAME: "set-nickname",
   GET_ROOM_INFO: "get-room-info",
+  SET_ROOM_SUBJECT: "set-room-subject",
   SET_ROOM_RULES: "set-room-rules",
   SELECT_OPTION: "select-option",
   VOTE: "vote",

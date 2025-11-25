@@ -22,6 +22,7 @@ import type {
   SerializeVote,
 } from "./types/room";
 import type { User } from "./types/user";
+import { Input } from "./components/ui/input";
 
 function RoomPage() {
   const navigate = useNavigate();
@@ -82,6 +83,17 @@ function RoomPage() {
     });
 
     socket.emit(SocketEvent.SET_ROOM_RULES, roomId, rules);
+  }
+
+  function handleSetRoomSubject(subject: string) {
+    if (!socket || !isConnected) return;
+
+    setRoom((prev) => {
+      if (!prev) return prev;
+      return { ...prev, subject };
+    });
+
+    socket.emit(SocketEvent.SET_ROOM_SUBJECT, roomId, subject);
   }
 
   function handleClickSelection(option: string) {
@@ -205,6 +217,14 @@ function RoomPage() {
       });
     }
 
+    function handleSetRoomSubjectFromServer(subject: string) {
+      setRoom((prev) => {
+        if (!prev) return prev;
+        return { ...prev, subject };
+      });
+      toast(`투표 주제가 변경되었습니다: ${subject}`);
+    }
+
     function handleVoteStart() {
       toast("투표가 시작되었습니다.");
       setIsVoteWinnerModalOpen(false);
@@ -232,6 +252,7 @@ function RoomPage() {
     socket.on(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
     socket.on(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
     socket.on(SocketEvent.VOTE, handleVote);
+    socket.on(SocketEvent.SET_ROOM_SUBJECT, handleSetRoomSubjectFromServer);
     socket.on(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
     socket.on(SocketEvent.VOTE_START, handleVoteStart);
     socket.on(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
@@ -241,6 +262,7 @@ function RoomPage() {
       socket.off(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
       socket.off(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
       socket.off(SocketEvent.VOTE, handleVote);
+      socket.off(SocketEvent.SET_ROOM_SUBJECT, handleSetRoomSubjectFromServer);
       socket.off(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
       socket.off(SocketEvent.VOTE_START, handleVoteStart);
       socket.off(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
@@ -284,6 +306,15 @@ function RoomPage() {
               />
             </Button>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <Input
+            readOnly={!isAdmin}
+            defaultValue={room?.subject}
+            placeholder="투표 주제를 입력해주세요."
+            onBlur={(e) => handleSetRoomSubject(e.target.value)}
+          />
         </div>
 
         <div className="mt-6">
@@ -368,6 +399,7 @@ function RoomPage() {
       />
 
       <VoteWinnerModal
+        subject={room?.subject || ""}
         rules={room?.rules}
         users={users}
         vote={room?.vote}
