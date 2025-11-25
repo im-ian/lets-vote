@@ -209,8 +209,8 @@ function RoomPage() {
     <>
       <Container>
         {isVoteWinnerModalOpen && <Confetti />}
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-end justify-between gap-2 w-full max-w-full">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <Button
               variant="outline"
               size="icon"
@@ -219,12 +219,12 @@ function RoomPage() {
               <HomeIcon />
             </Button>
             {room && (
-              <div>
-                <div className="text-xl font-bold">{room.name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold truncate">{room.name}</div>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isAdmin && (
               <Button size="icon" onClick={() => setIsRoomRuleSheetOpen(true)}>
                 <CogIcon />
