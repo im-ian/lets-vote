@@ -11,24 +11,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSocket } from "../providers/SocketProvider";
-import { Input } from "../ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
-import { Label } from "../ui/label";
 
-interface RoomCreateModalProps {
+interface RoomJoinModalProps {
+  roomId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
+export function RoomJoinModal({
+  roomId,
+  open,
+  onOpenChange,
+}: RoomJoinModalProps) {
   const { socket } = useSocket();
 
-  const [roomName, setRoomName] = useState("");
   const [password, setPassword] = useState("");
 
-  function onCreate() {
-    if (!roomName) {
-      toast.warning("방 이름을 입력해주세요.");
+  function handleJoin() {
+    if (!roomId) {
+      toast.warning("방을 선택해주세요.");
       return;
     }
 
@@ -37,7 +39,7 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
       return;
     }
 
-    socket?.emit("create-room", roomName, password);
+    socket?.emit("join-room", roomId, password);
     onOpenChange(false);
   }
 
@@ -45,23 +47,11 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>방 만들기</DialogTitle>
-          <DialogDescription>
-            방의 이름과 비밀번호를 입력해주세요.
-          </DialogDescription>
+          <DialogTitle>방 참여하기</DialogTitle>
+          <DialogDescription>방의 비밀번호를 입력해주세요.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 mt-6">
-          <div className="grid gap-3">
-            <Label htmlFor="room-name">방 이름</Label>
-            <Input
-              id="room-name"
-              name="roomName"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-3">
-            <Label htmlFor="room-password">비밀번호</Label>
+        <div className="grid gap-4">
+          <div className="flex items-center justify-center">
             <InputOTP
               maxLength={4}
               value={password}
@@ -92,8 +82,8 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
           <DialogClose asChild>
             <Button variant="outline">취소</Button>
           </DialogClose>
-          <Button type="submit" onClick={onCreate}>
-            만들기
+          <Button type="submit" onClick={handleJoin}>
+            참여하기
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -101,4 +91,4 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
   );
 }
 
-export default RoomCreateModal;
+export default RoomJoinModal;
