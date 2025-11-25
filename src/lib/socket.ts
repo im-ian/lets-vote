@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 export const socket = io("http://localhost:3001");
 
 export const SocketEvent = {
+  LOBBY: "lobby",
   JOIN_REQUEST_ROOM: "join-request-room",
   JOIN_ROOM: "join-room",
   JOINED_ROOM: "joined-room",
@@ -11,4 +12,9 @@ export const SocketEvent = {
   CREATE_ROOM: "create-room",
   GET_ROOM_LIST: "get-room-list",
   SET_NICKNAME: "set-nickname",
+  GET_ROOM_INFO: "get-room-info",
+  SET_ROOM_RULES: "set-room-rules",
+  SELECT_OPTION: "select-option",
+  VOTE: "vote",
+  VOTE_START: "vote-start",
 } as const;

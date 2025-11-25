@@ -19,7 +19,7 @@ import {
 } from "./components/ui/card";
 import { SocketEvent } from "./lib/socket";
 import { cn } from "./lib/utils";
-import type { Room, RoomWithUserCount } from "./types/room";
+import type { RoomWithUserCount } from "./types/room";
 
 function RoomList() {
   const navigate = useNavigate();
@@ -34,12 +34,12 @@ function RoomList() {
   const [isRoomCreateModalOpen, setIsRoomCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    socket?.emit(SocketEvent.GET_ROOM_LIST);
+    if (!socket || !isConnected) return;
 
-    const nickname = sessionStorage.getItem("nickname");
-    if (nickname) {
+    socket.emit(SocketEvent.LOBBY);
+
+    function handleChangeNickname(nickname: string) {
       setNickname(nickname);
-      socket?.emit(SocketEvent.SET_NICKNAME, nickname);
     }
 
     function handleGetRoomList(rooms: RoomWithUserCount[]) {
@@ -62,16 +62,18 @@ function RoomList() {
       }
     }
 
-    socket?.on(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
-    socket?.on(SocketEvent.JOINED_ROOM, handleRoomJoined);
-    socket?.on(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
+    socket.on(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
+    socket.on(SocketEvent.JOINED_ROOM, handleRoomJoined);
+    socket.on(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
+    socket.on(SocketEvent.SET_NICKNAME, handleChangeNickname);
 
     return () => {
-      socket?.off(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
-      socket?.off(SocketEvent.JOINED_ROOM, handleRoomJoined);
-      socket?.off(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
+      socket.off(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
+      socket.off(SocketEvent.JOINED_ROOM, handleRoomJoined);
+      socket.off(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
+      socket.off(SocketEvent.SET_NICKNAME, handleChangeNickname);
     };
-  }, [socket, navigate]);
+  }, [socket, isConnected, navigate]);
 
   return (
     <>
@@ -100,7 +102,7 @@ function RoomList() {
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-6 space-y-3">
           {rooms?.map((room) => (
             <Card
               key={room.id}

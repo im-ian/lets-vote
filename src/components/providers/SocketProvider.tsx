@@ -1,6 +1,6 @@
 // SocketContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
-import { socket } from "../../lib/socket";
+import { SocketEvent, socket } from "../../lib/socket";
 
 const SocketContext = createContext({
   socket,
@@ -16,6 +16,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("connect", () => {
       setIsConnected(true);
       console.log("Connected");
+
+      const nickname = sessionStorage.getItem("nickname");
+      if (nickname) {
+        socket.emit(SocketEvent.SET_NICKNAME, nickname);
+      }
     });
 
     socket.on("disconnect", () => {
@@ -26,7 +31,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       socket.off("connect");
       socket.off("disconnect");
-      socket.disconnect();
     };
   }, []);
 
