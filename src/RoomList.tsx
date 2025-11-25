@@ -106,7 +106,7 @@ function RoomList() {
 
         <div className="mt-6 space-y-3">
           {rooms?.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground h-[60vh] flex items-center justify-center">
               아직 생성된 방이 없습니다.
             </p>
           )}
