@@ -19,8 +19,11 @@ export function useTimer(initialSeconds: number, onComplete?: () => void) {
     setIsRunning(false);
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback((fromSeconds?: number) => {
     stop(); // 중복 시작 방지
+    if (fromSeconds !== undefined) {
+      setSeconds(fromSeconds);
+    }
     setIsRunning(true);
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => {

@@ -64,16 +64,20 @@ function RoomPage() {
   function handleSetRoomRules(rules: RoomRules) {
     if (!socket || !isConnected) return;
 
-    // Admin도 voteType 변경 시 vote 초기화
     setRoom((prev) => {
       if (!prev) return prev;
 
       const shouldResetVote = prev.rules.voteType !== rules.voteType;
 
+      if (shouldResetVote) {
+        timerReset();
+      }
+
       return {
         ...prev,
         rules,
         vote: shouldResetVote ? {} : prev.vote,
+        voteStartedAt: shouldResetVote ? null : prev.voteStartedAt,
       };
     });
 
@@ -136,6 +140,24 @@ function RoomPage() {
       const deserializedRoom = serde.deserializeRoom(room);
       setRoom(deserializedRoom);
       setUsers(users);
+
+      // 투표가 진행 중이면 타이머 동기화
+      if (deserializedRoom.voteStartedAt) {
+        const elapsed = Math.floor(
+          (Date.now() - deserializedRoom.voteStartedAt.getTime()) / 1000
+        );
+        const remaining = Math.max(
+          0,
+          deserializedRoom.rules.limitTime - elapsed
+        );
+
+        if (remaining > 0) {
+          timerStart(remaining);
+        } else {
+          // 이미 시간이 다 지났으면 타이머를 0으로 설정
+          timerReset();
+        }
+      }
     }
 
     function handleVote(vote: SerializeVote, options: string[]) {
@@ -156,19 +178,26 @@ function RoomPage() {
       setRoom((prev) => {
         if (!prev) return prev;
 
-        // voteType이 변경되면 vote 초기화
+        // voteType이 변경되면 vote 및 타이머 초기화
         const shouldResetVote = prev.rules.voteType !== rules.voteType;
+
+        if (shouldResetVote) {
+          timerReset();
+        }
 
         return {
           ...prev,
           rules,
           vote: shouldResetVote ? {} : prev.vote,
+          voteStartedAt: shouldResetVote ? null : prev.voteStartedAt,
         };
       });
     }
 
     function handleVoteStart() {
       toast("투표가 시작되었습니다.");
+      setIsVoteWinnerModalOpen(false);
+      setIsVoteOptionAddModalOpen(false);
       setSelectedOption([]);
       timerReset();
       timerStart();

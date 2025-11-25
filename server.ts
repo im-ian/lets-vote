@@ -42,7 +42,7 @@ const getRoomList = async (): Promise<RoomWithUserCount[]> => {
         ...room,
         userCount: sockets.length,
       };
-    }),
+    })
   );
 };
 
@@ -88,6 +88,7 @@ io.on("connection", async (socket) => {
       rules: defaultRoomRules,
       vote: {},
       createdAt: new Date(),
+      voteStartedAt: null,
     });
     console.log(`${socket.id} has created room ${roomName}`);
     socket.join(uuid);
@@ -163,6 +164,7 @@ io.on("connection", async (socket) => {
       SocketEvent.VOTE,
       serde.serializeVote(room.vote),
       options
+    );
   });
 
   socket.on(SocketEvent.SET_ROOM_RULES, async (roomId, rules) => {
@@ -172,9 +174,10 @@ io.on("connection", async (socket) => {
     const previousVoteType = rooms[roomIndex].rules.voteType;
     rooms[roomIndex].rules = rules;
 
-    // voteType이 변경되면 기존 투표 데이터 초기화
+    // voteType이 변경되면 기존 투표 데이터 및 타이머 초기화
     if (previousVoteType !== rules.voteType) {
       rooms[roomIndex].vote = {};
+      rooms[roomIndex].voteStartedAt = null;
     }
 
     io.to(roomId).emit(SocketEvent.SET_ROOM_RULES, rules);
@@ -188,6 +191,8 @@ io.on("connection", async (socket) => {
     options.forEach((option) => {
       rooms[roomIndex].vote[option] = new Set();
     });
+    rooms[roomIndex].voteStartedAt = new Date();
+
     io.to(roomId).emit(SocketEvent.VOTE_START);
   });
 

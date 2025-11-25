@@ -9,11 +9,16 @@ export type Room = {
   rules: RoomRules;
   vote: Vote;
   createdAt: Date;
+  voteStartedAt: Date | null;
 };
 
-export type SerializeRoom = Omit<Room, "createdAt" | "vote"> & {
+export type SerializeRoom = Omit<
+  Room,
+  "createdAt" | "vote" | "voteStartedAt"
+> & {
   createdAt: string;
   vote: SerializeVote;
+  voteStartedAt: string | null;
 };
 
 export type RoomWithUserCount = Omit<Room, "vote"> & {

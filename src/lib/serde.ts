@@ -19,11 +19,13 @@ const serde = {
     ...room,
     createdAt: room.createdAt.toISOString(),
     vote: serializeVote(room.vote),
+    voteStartedAt: room.voteStartedAt ? room.voteStartedAt.toISOString() : null,
   }),
   deserializeRoom: (room: SerializeRoom): Room => ({
     ...room,
     createdAt: new Date(room.createdAt),
     vote: deserializeVote(room.vote),
+    voteStartedAt: room.voteStartedAt ? new Date(room.voteStartedAt) : null,
   }),
 };
 
