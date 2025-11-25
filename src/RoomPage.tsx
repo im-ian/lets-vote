@@ -31,6 +31,11 @@ function RoomPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
+  const [isUserListSheetOpen, setIsUserListSheetOpen] = useState(false);
+  const [isRoomRuleSheetOpen, setIsRoomRuleSheetOpen] = useState(false);
+  const [isVoteOptionAddModalOpen, setIsVoteOptionAddModalOpen] =
+    useState(false);
+  const [isVoteWinnerModalOpen, setIsVoteWinnerModalOpen] = useState(false);
 
   const previousRules = useRef<RoomRules | null>(null);
 
@@ -39,22 +44,25 @@ function RoomPage() {
     seconds: remainingTime,
     start: timerStart,
     reset: timerReset,
-  } = useTimer(room?.rules.limitTime || 15);
-
-  const [isUserListSheetOpen, setIsUserListSheetOpen] = useState(false);
-  const [isRoomRuleSheetOpen, setIsRoomRuleSheetOpen] = useState(false);
-  const [isVoteOptionAddModalOpen, setIsVoteOptionAddModalOpen] =
-    useState(false);
-  const [isVoteWinnerModalOpen, setIsVoteWinnerModalOpen] = useState(false);
+  } = useTimer(room?.rules.limitTime || 15, () => {
+    setIsVoteWinnerModalOpen(true);
+  });
 
   const isAdmin = socket?.id && socket.id === room?.creator.id;
 
-  function updateRoomRules(rules: RoomRules, currentUsers: User[]) {
+  function updateRoomRules(
+    rules: RoomRules,
+    currentUsers: User[],
+    initialVoteOptions?: string[]
+  ) {
     setRoom((prev) => (prev ? { ...prev, rules } : prev));
 
     if (previousRules.current?.voteType !== rules.voteType) {
       if (rules.voteType === "user") {
         setVoteOptions(currentUsers.map((u) => u.nickname));
+      } else if (initialVoteOptions !== undefined) {
+        // 초기 투표 옵션이 제공된 경우 (custom 등)
+        setVoteOptions(initialVoteOptions);
       } else {
         setVoteOptions([]);
       }
@@ -104,8 +112,23 @@ function RoomPage() {
     socket.emit(SocketEvent.JOIN_ROOM, roomId);
     socket.emit(SocketEvent.GET_ROOM_INFO, roomId);
 
-    function handleJoinRoom(user: User) {
+    function handleJoinRoom({
+      user,
+      users: allUsers,
+    }: {
+      user: User;
+      users: User[];
+    }) {
       toast(`${user.nickname}님이 입장하셨습니다.`);
+      setUsers(allUsers);
+
+      // voteType이 'user'일 때 투표 옵션도 업데이트
+      setRoom((prevRoom) => {
+        if (prevRoom?.rules.voteType === "user") {
+          setVoteOptions(allUsers.map((u) => u.nickname));
+        }
+        return prevRoom;
+      });
     }
 
     function handleGetRoomInfo({
@@ -116,9 +139,13 @@ function RoomPage() {
       users: User[];
     }) {
       const deserializedRoom = serde.deserializeRoom(room);
+
+      // vote 객체의 키들을 투표 옵션으로 추출 (custom, user 타입에서 사용)
+      const currentVoteOptions = Object.keys(deserializedRoom.vote || {});
+
       setRoom(deserializedRoom);
       setUsers(users);
-      updateRoomRules(deserializedRoom.rules, users); // 최초 접속 시 users 전달
+      updateRoomRules(deserializedRoom.rules, users, currentVoteOptions);
     }
 
     function handleVote(vote: SerializeVote) {
@@ -132,6 +159,7 @@ function RoomPage() {
     }
 
     function handleVoteStart() {
+      toast("투표가 시작되었습니다.");
       setSelectedOption([]);
       timerReset();
       timerStart();
@@ -157,12 +185,6 @@ function RoomPage() {
       socket.off(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
     };
   }, [socket, isConnected, roomId]);
-
-  useEffect(() => {
-    if (remainingTime === 0) {
-      setIsVoteWinnerModalOpen(true);
-    }
-  }, [remainingTime]);
 
   return (
     <>

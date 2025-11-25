@@ -111,10 +111,20 @@ io.on("connection", async (socket) => {
 
   socket.on(SocketEvent.JOIN_ROOM, async (roomId) => {
     socket.join(roomId);
+
+    const sockets = await io.in(roomId).fetchSockets();
+    const allUsers = sockets.map((s) => ({
+      id: s.id,
+      nickname: users[s.id].nickname,
+    }));
+
     io.to(roomId).emit(SocketEvent.JOIN_ROOM, {
-      id: socket.id,
-      nickname: users[socket.id].nickname,
-    } as User);
+      user: {
+        id: socket.id,
+        nickname: users[socket.id].nickname,
+      } as User,
+      users: allUsers,
+    });
     io.emit(SocketEvent.GET_ROOM_LIST, await getRoomList());
   });
 
