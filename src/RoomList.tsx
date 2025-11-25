@@ -130,7 +130,7 @@ function RoomList() {
                   <div className="w-full flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
                       <UsersIcon size={16} />
-                      {room.userCount}명
+                      {room.userCount}명 참여 중
                     </div>
                     <div>
                       {dayjs(room.createdAt).format("YYYY-MM-DD HH:mm")}
