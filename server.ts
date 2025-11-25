@@ -36,8 +36,12 @@ const io = new Server(httpServer, {
 });
 
 const getRoomList = async (): Promise<RoomWithUserCount[]> => {
+  const sortedRooms = [...rooms].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+  );
+
   return Promise.all(
-    rooms.map(async (room) => {
+    sortedRooms.map(async (room) => {
       const sockets = await io.in(room.id).fetchSockets();
       return {
         ...room,
