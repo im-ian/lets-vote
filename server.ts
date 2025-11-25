@@ -24,6 +24,7 @@ const defaultRoomRules: RoomRules = {
   anonymity: false,
   limitTime: 15,
   multiple: false,
+  notifyWhenVoteChanged: false,
 };
 
 const httpServer = createServer(app);
