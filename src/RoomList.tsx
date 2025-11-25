@@ -25,7 +25,10 @@ function RoomList() {
   const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
 
-  const [nickname, setNickname] = useState("익명");
+  const [nickname, setNickname] = useState(() => {
+    const nickname = sessionStorage.getItem("nickname");
+    return nickname || "익명";
+  });
   const [rooms, setRooms] = useState<RoomWithUserCount[]>();
   const [selectRoomId, setSelectRoomId] = useState<string | null>(null);
 
