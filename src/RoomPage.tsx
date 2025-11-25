@@ -3,7 +3,7 @@ import { CheckIcon, CogIcon, UsersIcon, ZapIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { toast } from "sonner";
-import Container from "./components/containter";
+import Container from "./components/container";
 import { useTimer } from "./components/hooks/useTimer";
 import VoteOptionAddModal from "./components/modals/VoteOptionAddModal";
 import VoteWinnerModal from "./components/modals/VoteWinnerModal";
@@ -123,7 +123,7 @@ function RoomPage() {
 
     function handleVote(vote: SerializeVote) {
       setRoom((prev) =>
-        prev ? { ...prev, vote: serde.deserializeVote(vote) } : prev,
+        prev ? { ...prev, vote: serde.deserializeVote(vote) } : prev
       );
     }
 

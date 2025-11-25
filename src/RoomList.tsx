@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { PlusIcon, UsersIcon, ZapIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import Container from "./components/containter";
+import Container from "./components/container";
 import NicknameSetModal from "./components/modals/NicknameSetModal";
 import { RoomCreateModal } from "./components/modals/RoomCreateModal";
 import RoomJoinModal from "./components/modals/RoomJoinModal";
