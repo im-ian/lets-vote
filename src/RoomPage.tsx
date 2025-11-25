@@ -278,7 +278,7 @@ function RoomPage() {
             <Progress
               value={(remainingTime / (room?.rules.limitTime || 15)) * 100}
             />
-            <div className="flex-shrink-0 text-center text-sm font-bold">
+            <div className="w-10 text-center text-sm font-bold">
               {remainingTime}초
             </div>
           </div>
