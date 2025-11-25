@@ -51,6 +51,25 @@ const getRoomList = async (): Promise<RoomWithUserCount[]> => {
   );
 };
 
+// 특정 방의 유저 목록을 업데이트하는 헬퍼 함수
+const updateRoomUsers = async (roomId: string, leftUserId: string) => {
+  const sockets = await io.in(roomId).fetchSockets();
+  const roomUsers = sockets.map((s) => ({
+    id: s.id,
+    nickname: users[s.id]?.nickname || "익명",
+  }));
+
+  const leftUser = {
+    id: leftUserId,
+    nickname: users[leftUserId]?.nickname || "익명",
+  };
+
+  io.to(roomId).emit(SocketEvent.LEAVE_ROOM, {
+    leftUser,
+    users: roomUsers,
+  });
+};
+
 // 빈 방들을 정리하는 헬퍼 함수
 const cleanupEmptyRooms = async () => {
   const roomsToRemove: string[] = [];
@@ -89,11 +108,23 @@ io.on("connection", async (socket) => {
   };
 
   socket.on(SocketEvent.LOBBY, async () => {
+    // 유저가 속한 방 목록 저장 (socket.id 제외)
+    const userRooms: string[] = [];
     socket.rooms.forEach((roomId) => {
       if (roomId !== socket.id) {
-        socket.leave(roomId);
+        userRooms.push(roomId);
       }
     });
+
+    // 모든 방에서 나가기
+    userRooms.forEach((roomId) => {
+      socket.leave(roomId);
+    });
+
+    // 각 방의 남은 유저들에게 업데이트된 유저 목록 전송
+    for (const roomId of userRooms) {
+      await updateRoomUsers(roomId, socket.id);
+    }
 
     // 빈 방 정리
     await cleanupEmptyRooms();
@@ -246,6 +277,20 @@ io.on("connection", async (socket) => {
 
   socket.on("disconnect", async () => {
     console.log("User disconnected:", socket.id);
+
+    // 유저가 속한 방 목록 저장 (socket.id 제외)
+    const userRooms: string[] = [];
+    socket.rooms.forEach((roomId) => {
+      if (roomId !== socket.id) {
+        userRooms.push(roomId);
+      }
+    });
+
+    // 각 방의 남은 유저들에게 업데이트된 유저 목록 전송 (users 삭제 전에)
+    for (const roomId of userRooms) {
+      await updateRoomUsers(roomId, socket.id);
+    }
+
     delete users[socket.id];
     clearInterval(interval);
 

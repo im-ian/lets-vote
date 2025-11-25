@@ -130,6 +130,17 @@ function RoomPage() {
       setUsers(allUsers);
     }
 
+    function handleLeaveRoom({
+      leftUser,
+      users: allUsers,
+    }: {
+      leftUser: User;
+      users: User[];
+    }) {
+      toast(`${leftUser.nickname}님이 퇴장하셨습니다.`);
+      setUsers(allUsers);
+    }
+
     function handleGetRoomInfo({
       room,
       users,
@@ -218,6 +229,7 @@ function RoomPage() {
     }
 
     socket.on(SocketEvent.JOIN_ROOM, handleJoinRoom);
+    socket.on(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
     socket.on(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
     socket.on(SocketEvent.VOTE, handleVote);
     socket.on(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
@@ -226,6 +238,7 @@ function RoomPage() {
 
     return () => {
       socket.off(SocketEvent.JOIN_ROOM, handleJoinRoom);
+      socket.off(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
       socket.off(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
       socket.off(SocketEvent.VOTE, handleVote);
       socket.off(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);

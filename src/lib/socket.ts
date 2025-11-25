@@ -7,6 +7,7 @@ export const SocketEvent = {
   LOBBY: "lobby",
   JOIN_REQUEST_ROOM: "join-request-room",
   JOIN_ROOM: "join-room",
+  LEAVE_ROOM: "leave-room",
   JOINED_ROOM: "joined-room",
   JOIN_ROOM_ERROR: "join-room-error",
   CREATE_ROOM: "create-room",
