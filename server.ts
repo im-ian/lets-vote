@@ -96,12 +96,12 @@ io.on("connection", async (socket) => {
   });
 
   socket.on(SocketEvent.JOIN_REQUEST_ROOM, async (roomId, roomPassword) => {
-    const room = rooms.find((room) => room.id === roomId);
-    if (!room) {
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) {
       socket.emit(SocketEvent.JOIN_ROOM_ERROR, "room-not-found");
       return;
     }
-    if (room.password !== roomPassword) {
+    if (rooms[roomIndex].password !== roomPassword) {
       socket.emit(SocketEvent.JOIN_ROOM_ERROR, "room-password-wrong");
       return;
     }
@@ -120,8 +120,10 @@ io.on("connection", async (socket) => {
 
   socket.on(SocketEvent.GET_ROOM_INFO, async (roomId) => {
     const sockets = await io.in(roomId).fetchSockets();
-    const room = rooms.find((room) => room.id === roomId);
-    if (!room) return;
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    const room = rooms[roomIndex];
 
     io.to(roomId).emit(SocketEvent.GET_ROOM_INFO, {
       users: sockets.map((socket) => ({
@@ -133,8 +135,10 @@ io.on("connection", async (socket) => {
   });
 
   socket.on(SocketEvent.VOTE, async (roomId, options: string[]) => {
-    const room = rooms.find((room) => room.id === roomId);
-    if (!room) return;
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    const room = rooms[roomIndex];
 
     Object.keys(room.vote).forEach((option) => {
       room.vote[option].delete(socket.id);
@@ -149,16 +153,30 @@ io.on("connection", async (socket) => {
   });
 
   socket.on(SocketEvent.SET_ROOM_RULES, async (roomId, rules) => {
-    const room = rooms.find((room) => room.id === roomId);
-    if (!room) return;
-    room.rules = rules;
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    rooms[roomIndex].rules = rules;
     io.to(roomId).emit(SocketEvent.SET_ROOM_RULES, rules);
   });
 
-  socket.on(SocketEvent.VOTE_START, async (roomId) => {
-    const room = rooms.find((room) => room.id === roomId);
-    if (!room) return;
+  socket.on(SocketEvent.VOTE_START, async (roomId, options: string[]) => {
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    rooms[roomIndex].vote = {};
+    options.forEach((option) => {
+      rooms[roomIndex].vote[option] = new Set();
+    });
     io.to(roomId).emit(SocketEvent.VOTE_START);
+  });
+
+  socket.on(SocketEvent.VOTE_ADD_OPTION, async (roomId, option: string) => {
+    const roomIndex = rooms.findIndex((room) => room.id === roomId);
+    if (roomIndex === -1) return;
+
+    rooms[roomIndex].vote[option] = new Set();
+    io.to(roomId).emit(SocketEvent.VOTE_ADD_OPTION, option);
   });
 
   // socket.on("pong", () => {

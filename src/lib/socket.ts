@@ -17,4 +17,5 @@ export const SocketEvent = {
   SELECT_OPTION: "select-option",
   VOTE: "vote",
   VOTE_START: "vote-start",
+  VOTE_ADD_OPTION: "vote-add-option",
 } as const;

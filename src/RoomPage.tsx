@@ -1,10 +1,11 @@
 import { useParams } from "@tanstack/react-router";
 import { CheckIcon, CogIcon, UsersIcon, ZapIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { toast } from "sonner";
 import Container from "./components/containter";
 import { useTimer } from "./components/hooks/useTimer";
+import VoteOptionAddModal from "./components/modals/VoteOptionAddModal";
 import VoteWinnerModal from "./components/modals/VoteWinnerModal";
 import { useSocket } from "./components/providers/SocketProvider";
 import RoomRuleSheet from "./components/sheets/RoomRuleSheet";
@@ -28,7 +29,10 @@ function RoomPage() {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
+
+  const previousRules = useRef<RoomRules | null>(null);
 
   const {
     isRunning: isTimerRunning,
@@ -39,14 +43,29 @@ function RoomPage() {
 
   const [isUserListSheetOpen, setIsUserListSheetOpen] = useState(false);
   const [isRoomRuleSheetOpen, setIsRoomRuleSheetOpen] = useState(false);
+  const [isVoteOptionAddModalOpen, setIsVoteOptionAddModalOpen] =
+    useState(false);
   const [isVoteWinnerModalOpen, setIsVoteWinnerModalOpen] = useState(false);
+
+  const isAdmin = socket?.id && socket.id === room?.creator.id;
+
+  function updateRoomRules(rules: RoomRules, currentUsers: User[]) {
+    setRoom((prev) => (prev ? { ...prev, rules } : prev));
+
+    if (previousRules.current?.voteType !== rules.voteType) {
+      if (rules.voteType === "user") {
+        setVoteOptions(currentUsers.map((u) => u.nickname));
+      } else {
+        setVoteOptions([]);
+      }
+    }
+
+    previousRules.current = rules;
+  }
 
   function handleSetRoomRules(rules: RoomRules) {
     if (!socket || !isConnected) return;
-    setRoom((prevRoom) => {
-      if (!prevRoom) return null;
-      return { ...prevRoom, rules };
-    });
+    updateRoomRules(rules, users);
     socket.emit(SocketEvent.SET_ROOM_RULES, roomId, rules);
   }
 
@@ -62,11 +81,7 @@ function RoomPage() {
         newSelectedOptions = [...selectedOption, option];
       }
     } else {
-      if (selectedOption.includes(option)) {
-        newSelectedOptions = [];
-      } else {
-        newSelectedOptions = [option];
-      }
+      newSelectedOptions = selectedOption.includes(option) ? [] : [option];
     }
 
     setSelectedOption(newSelectedOptions);
@@ -75,7 +90,12 @@ function RoomPage() {
 
   function handleClickVoteStart() {
     if (!socket || !isConnected) return;
-    socket.emit(SocketEvent.VOTE_START, roomId);
+    socket.emit(SocketEvent.VOTE_START, roomId, voteOptions);
+  }
+
+  function handleVoteAddOption(option: string) {
+    if (!socket || !isConnected) return;
+    socket.emit(SocketEvent.VOTE_ADD_OPTION, roomId, option);
   }
 
   useEffect(() => {
@@ -95,41 +115,46 @@ function RoomPage() {
       room: SerializeRoom;
       users: User[];
     }) {
-      setRoom(serde.deserializeRoom(room));
+      const deserializedRoom = serde.deserializeRoom(room);
+      setRoom(deserializedRoom);
       setUsers(users);
+      updateRoomRules(deserializedRoom.rules, users); // 최초 접속 시 users 전달
     }
 
     function handleVote(vote: SerializeVote) {
-      setRoom((prev) => {
-        if (!prev) return null;
-        return { ...prev, vote: serde.deserializeVote(vote) };
-      });
+      setRoom((prev) =>
+        prev ? { ...prev, vote: serde.deserializeVote(vote) } : prev,
+      );
     }
 
-    function handleSetRoomRules(rules: RoomRules) {
-      setRoom((prev) => {
-        if (!prev) return null;
-        return { ...prev, rules };
-      });
+    function handleSetRoomRulesFromServer(rules: RoomRules) {
+      updateRoomRules(rules, users); // 서버 룰 변경 시 현재 users 사용
     }
 
     function handleVoteStart() {
+      setSelectedOption([]);
       timerReset();
       timerStart();
+    }
+
+    function handleVoteAddOption(option: string) {
+      setVoteOptions((prev) => [...prev, option]);
     }
 
     socket.on(SocketEvent.JOIN_ROOM, handleJoinRoom);
     socket.on(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
     socket.on(SocketEvent.VOTE, handleVote);
-    socket.on(SocketEvent.SET_ROOM_RULES, handleSetRoomRules);
+    socket.on(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
     socket.on(SocketEvent.VOTE_START, handleVoteStart);
+    socket.on(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
 
     return () => {
       socket.off(SocketEvent.JOIN_ROOM, handleJoinRoom);
       socket.off(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
       socket.off(SocketEvent.VOTE, handleVote);
-      socket.off(SocketEvent.SET_ROOM_RULES, handleSetRoomRules);
+      socket.off(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
       socket.off(SocketEvent.VOTE_START, handleVoteStart);
+      socket.off(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
     };
   }, [socket, isConnected, roomId]);
 
@@ -138,8 +163,6 @@ function RoomPage() {
       setIsVoteWinnerModalOpen(true);
     }
   }, [remainingTime]);
-
-  const isAdmin = socket?.id && socket.id === room?.creator.id;
 
   return (
     <>
@@ -177,41 +200,46 @@ function RoomPage() {
             </div>
           </div>
 
-          {room?.rules.voteType === "user" ? (
-            <div className="flex flex-col gap-2 mt-4">
-              {users.map((user) => {
-                const isSelected = selectedOption.includes(user.nickname);
-
-                return (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    disabled={!isTimerRunning}
-                    className="w-full flex items-center justify-between"
-                    key={user.id}
-                    onClick={() => handleClickSelection(user.nickname)}
-                  >
-                    <div>{user.nickname}</div>
-                    <CheckIcon
-                      className={cn(isSelected ? "visible" : "invisible")}
-                    />
-                  </Button>
-                );
-              })}
-
-              {isAdmin && (
+          <div className="flex flex-col gap-2 mt-4">
+            {voteOptions.map((option) => {
+              const isSelected = selectedOption.includes(option);
+              return (
                 <Button
-                  className="mt-4"
-                  onClick={handleClickVoteStart}
-                  disabled={isTimerRunning}
+                  variant="outline"
+                  size="lg"
+                  disabled={!isTimerRunning}
+                  className="w-full flex items-center justify-between"
+                  key={option}
+                  onClick={() => handleClickSelection(option)}
                 >
-                  투표 시작
+                  <div>{option}</div>
+                  <CheckIcon
+                    className={cn(isSelected ? "visible" : "invisible")}
+                  />
                 </Button>
-              )}
-            </div>
-          ) : (
-            <div>커스텀</div>
-          )}
+              );
+            })}
+
+            {room?.rules.voteType === "custom" && (
+              <Button
+                variant="secondary"
+                className="mt-4"
+                onClick={() => setIsVoteOptionAddModalOpen(true)}
+              >
+                옵션 추가
+              </Button>
+            )}
+
+            {isAdmin && (
+              <Button
+                className="mt-4"
+                onClick={handleClickVoteStart}
+                disabled={isTimerRunning}
+              >
+                투표 시작
+              </Button>
+            )}
+          </div>
         </div>
       </Container>
 
@@ -228,6 +256,13 @@ function RoomPage() {
         users={users}
         open={isUserListSheetOpen}
         onOpenChange={setIsUserListSheetOpen}
+      />
+
+      <VoteOptionAddModal
+        options={voteOptions}
+        open={isVoteOptionAddModalOpen}
+        onOpenChange={setIsVoteOptionAddModalOpen}
+        onAddOption={handleVoteAddOption}
       />
 
       <VoteWinnerModal
