@@ -103,6 +103,12 @@ function RoomList() {
         </div>
 
         <div className="mt-6 space-y-3">
+          {rooms?.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">
+              아직 생성된 방이 없습니다.
+            </p>
+          )}
+
           {rooms?.map((room) => (
             <Card
               key={room.id}
