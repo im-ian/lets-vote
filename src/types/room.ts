@@ -25,6 +25,7 @@ export type RoomRules = {
   anonymity: boolean;
   limitTime: number;
   multiple: boolean;
+  notifyWhenVoteChanged: boolean;
 };
 
 export type Vote = Record<string, Set<string>>;

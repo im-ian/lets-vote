@@ -91,6 +91,17 @@ function RoomRuleSheet({
               }
             />
           </div>
+
+          <div className="grid w-full max-w-sm items-center gap-3">
+            <Label htmlFor="notifyWhenVoteChanged">투표 변경 시 알림</Label>
+            <Switch
+              id="notifyWhenVoteChanged"
+              checked={rules.notifyWhenVoteChanged}
+              onCheckedChange={(checked) =>
+                onChangeRules({ ...rules, notifyWhenVoteChanged: checked })
+              }
+            />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

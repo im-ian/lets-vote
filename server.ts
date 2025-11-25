@@ -159,7 +159,10 @@ io.on("connection", async (socket) => {
       room.vote[option].add(socket.id);
     });
 
-    io.to(roomId).emit(SocketEvent.VOTE, serde.serializeVote(room.vote));
+    io.to(roomId).emit(
+      SocketEvent.VOTE,
+      serde.serializeVote(room.vote),
+      options
   });
 
   socket.on(SocketEvent.SET_ROOM_RULES, async (roomId, rules) => {

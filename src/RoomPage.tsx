@@ -1,5 +1,5 @@
-import { useParams } from "@tanstack/react-router";
-import { CheckIcon, CogIcon, UsersIcon, ZapIcon } from "lucide-react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { CheckIcon, CogIcon, HomeIcon, UsersIcon, ZapIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Confetti from "react-confetti";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import type {
 import type { User } from "./types/user";
 
 function RoomPage() {
+  const navigate = useNavigate();
   const { roomId } = useParams({ from: "/room/$roomId" });
   const { socket, isConnected } = useSocket();
 
@@ -137,10 +138,18 @@ function RoomPage() {
       setUsers(users);
     }
 
-    function handleVote(vote: SerializeVote) {
-      setRoom((prev) =>
-        prev ? { ...prev, vote: serde.deserializeVote(vote) } : prev
-      );
+    function handleVote(vote: SerializeVote, options: string[]) {
+      setRoom((prev) => {
+        if (!prev) return prev;
+
+        const updatedRoom = { ...prev, vote: serde.deserializeVote(vote) };
+
+        if (prev.rules.notifyWhenVoteChanged && options.length > 0) {
+          toast(`누군가 ${options.join(", ")}에 투표했습니다.`);
+        }
+
+        return updatedRoom;
+      });
     }
 
     function handleSetRoomRulesFromServer(rules: RoomRules) {
@@ -201,8 +210,19 @@ function RoomPage() {
       <Container>
         {isVoteWinnerModalOpen && <Confetti />}
         <div className="flex items-end justify-between gap-2">
-          <div>
-            <div className="text-xl font-bold">{room?.name}</div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate({ to: "/" })}
+            >
+              <HomeIcon />
+            </Button>
+            {room && (
+              <div>
+                <div className="text-xl font-bold">{room.name}</div>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
