@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SocketEvent } from "@/lib/socket";
 import { useSocket } from "../providers/SocketProvider";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -37,7 +38,7 @@ export function NicknameSetModal({
       return;
     }
 
-    socket?.emit("set-nickname", nickname);
+    socket?.emit(SocketEvent.SET_NICKNAME, nickname);
     sessionStorage.setItem("nickname", nickname);
     onChangeNickname(nickname);
     onOpenChange(false);

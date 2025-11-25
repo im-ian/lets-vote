@@ -6,6 +6,9 @@ export type Room = {
     id: string;
     nickname: string;
   };
-  users: string[];
   createdAt: Date;
+};
+
+export type RoomWithUserCount = Room & {
+  userCount: number;
 };

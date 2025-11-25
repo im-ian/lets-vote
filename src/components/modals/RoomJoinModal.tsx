@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SocketEvent } from "@/lib/socket";
 import { useSocket } from "../providers/SocketProvider";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
 
@@ -39,7 +40,7 @@ export function RoomJoinModal({
       return;
     }
 
-    socket?.emit("join-room", roomId, password);
+    socket?.emit(SocketEvent.JOIN_REQUEST_ROOM, roomId, password);
     onOpenChange(false);
   }
 

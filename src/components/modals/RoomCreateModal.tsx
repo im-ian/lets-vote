@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SocketEvent } from "@/lib/socket";
 import { useSocket } from "../providers/SocketProvider";
 import { Input } from "../ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
@@ -37,7 +38,7 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
       return;
     }
 
-    socket?.emit("create-room", roomName, password);
+    socket?.emit(SocketEvent.CREATE_ROOM, roomName, password);
     onOpenChange(false);
   }
 

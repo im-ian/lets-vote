@@ -17,15 +17,16 @@ import {
   CardHeader,
   CardTitle,
 } from "./components/ui/card";
+import { SocketEvent } from "./lib/socket";
 import { cn } from "./lib/utils";
-import type { Room } from "./types/room";
+import type { Room, RoomWithUserCount } from "./types/room";
 
 function RoomList() {
   const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
 
   const [nickname, setNickname] = useState("익명");
-  const [rooms, setRooms] = useState<Room[]>();
+  const [rooms, setRooms] = useState<RoomWithUserCount[]>();
   const [selectRoomId, setSelectRoomId] = useState<string | null>(null);
 
   const [isNicknameSetModalOpen, setIsNicknameSetModalOpen] = useState(false);
@@ -33,15 +34,15 @@ function RoomList() {
   const [isRoomCreateModalOpen, setIsRoomCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    socket?.emit("get-room-list");
+    socket?.emit(SocketEvent.GET_ROOM_LIST);
 
     const nickname = sessionStorage.getItem("nickname");
     if (nickname) {
       setNickname(nickname);
-      socket?.emit("set-nickname", nickname);
+      socket?.emit(SocketEvent.SET_NICKNAME, nickname);
     }
 
-    function handleGetRoomList(rooms: Room[]) {
+    function handleGetRoomList(rooms: RoomWithUserCount[]) {
       setRooms(rooms);
     }
 
@@ -61,14 +62,14 @@ function RoomList() {
       }
     }
 
-    socket?.on("room-list", handleGetRoomList);
-    socket?.on("room-joined", handleRoomJoined);
-    socket?.on("room-join-error", handleRoomJoinError);
+    socket?.on(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
+    socket?.on(SocketEvent.JOINED_ROOM, handleRoomJoined);
+    socket?.on(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
 
     return () => {
-      socket?.off("room-list", handleGetRoomList);
-      socket?.off("room-joined", handleRoomJoined);
-      socket?.off("room-join-error", handleRoomJoinError);
+      socket?.off(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
+      socket?.off(SocketEvent.JOINED_ROOM, handleRoomJoined);
+      socket?.off(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
     };
   }, [socket, navigate]);
 
@@ -119,7 +120,7 @@ function RoomList() {
                   <div className="w-full flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
                       <UsersIcon size={16} />
-                      {room.users.length}명
+                      {room.userCount}명
                     </div>
                     <div>
                       {dayjs(room.createdAt).format("YYYY-MM-DD HH:mm")}
