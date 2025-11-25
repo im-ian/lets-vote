@@ -31,6 +31,7 @@ function RoomPage() {
   const [selectedOption, setSelectedOption] = useState<string[]>([]);
 
   const {
+    isRunning: isTimerRunning,
     seconds: remainingTime,
     start: timerStart,
     reset: timerReset,
@@ -139,7 +140,6 @@ function RoomPage() {
   }, [remainingTime]);
 
   const isAdmin = socket?.id && socket.id === room?.creator.id;
-  const isDuringVote = remainingTime > 0;
 
   return (
     <>
@@ -186,7 +186,7 @@ function RoomPage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    disabled={!isDuringVote}
+                    disabled={!isTimerRunning}
                     className="w-full flex items-center justify-between"
                     key={user.id}
                     onClick={() => handleClickSelection(user.nickname)}
@@ -203,7 +203,7 @@ function RoomPage() {
                 <Button
                   className="mt-4"
                   onClick={handleClickVoteStart}
-                  disabled={isDuringVote}
+                  disabled={isTimerRunning}
                 >
                   투표 시작
                 </Button>

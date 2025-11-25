@@ -2,17 +2,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useTimer(initialSeconds: number) {
   const [seconds, setSeconds] = useState(initialSeconds);
+  const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stop = useCallback(() => {
-    if (intervalRef.current) {
+    if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    setIsRunning(false);
   }, []);
 
   const start = useCallback(() => {
-    stop(); // 중복 실행 방지
+    stop(); // 중복 시작 방지
+    setIsRunning(true);
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => {
         if (prev <= 1) {
@@ -29,10 +32,9 @@ export function useTimer(initialSeconds: number) {
     setSeconds(initialSeconds);
   }, [initialSeconds, stop]);
 
-  // 언마운트 시 interval 정리
   useEffect(() => {
-    return () => stop();
+    return () => stop(); // 언마운트 시 정리
   }, [stop]);
 
-  return { seconds, start, stop, reset };
+  return { seconds, isRunning, start, stop, reset };
 }
