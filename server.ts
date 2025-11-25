@@ -129,7 +129,7 @@ io.on("connection", async (socket) => {
     // 빈 방 정리
     await cleanupEmptyRooms();
 
-    socket.emit(SocketEvent.GET_ROOM_LIST, await getRoomList());
+    io.emit(SocketEvent.GET_ROOM_LIST, await getRoomList());
   });
 
   socket.on(SocketEvent.GET_ROOM_LIST, async () => {
@@ -305,6 +305,8 @@ io.on("connection", async (socket) => {
 
     // 빈 방 정리
     await cleanupEmptyRooms();
+
+    io.emit(SocketEvent.GET_ROOM_LIST, await getRoomList());
   });
 });
 
