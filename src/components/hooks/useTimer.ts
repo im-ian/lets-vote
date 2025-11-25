@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useTimer(initialSeconds: number) {
+export function useTimer(initialSeconds: number, onComplete?: () => void) {
   const [seconds, setSeconds] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onCompleteRef = useRef(onComplete);
+
+  // onComplete 참조를 최신 상태로 유지
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const stop = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -20,6 +26,10 @@ export function useTimer(initialSeconds: number) {
       setSeconds((prev) => {
         if (prev <= 1) {
           stop();
+          // 타이머 완료 시 콜백 호출
+          if (onCompleteRef.current) {
+            onCompleteRef.current();
+          }
           return 0;
         }
         return prev - 1;
