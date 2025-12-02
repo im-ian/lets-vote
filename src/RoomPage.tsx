@@ -14,6 +14,7 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Progress } from "./components/ui/progress";
 import { SocketEvent } from "./constants/socket";
+import { useSocketEvents } from "./hooks/useSocketEvent";
 import serde from "./lib/serde";
 import { cn } from "./lib/utils";
 import type {
@@ -125,24 +126,53 @@ function RoomPage() {
     socket.emit(SocketEvent.VOTE_ADD_OPTION, roomId, option);
   }
 
+  // 방 입장 시 초기 이벤트 전송
   useEffect(() => {
     if (!socket || !isConnected) return;
 
     socket.emit(SocketEvent.JOIN_ROOM, roomId);
     socket.emit(SocketEvent.GET_ROOM_INFO, roomId);
+  }, [socket, isConnected, roomId]);
 
-    function handleJoinRoom({
+  // VOTE 이벤트는 여러 인자를 받으므로 별도 처리
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    function handleVote(vote: SerializeVote, options: string[]) {
+      setRoom((prev) => {
+        if (!prev) return prev;
+
+        const updatedRoom = { ...prev, vote: serde.deserializeVote(vote) };
+
+        if (prev.rules.notifyWhenVoteChanged && options.length > 0) {
+          toast(`누군가 ${options.join(", ")}에 투표했습니다.`);
+        }
+
+        return updatedRoom;
+      });
+    }
+
+    socket.on(SocketEvent.VOTE, handleVote);
+
+    return () => {
+      socket.off(SocketEvent.VOTE, handleVote);
+    };
+  }, [socket, isConnected]);
+
+  // 소켓 이벤트 핸들러 등록 (useSocketEvents 사용)
+  useSocketEvents({
+    [SocketEvent.JOIN_ROOM]: ({
       user,
       users: allUsers,
     }: {
       user: User;
       users: User[];
-    }) {
+    }) => {
       toast(`${user.nickname}님이 입장하셨습니다.`);
       setUsers(allUsers);
-    }
+    },
 
-    function handleLeaveRoom({
+    [SocketEvent.LEAVE_ROOM]: ({
       leftUser,
       users: allUsers,
       room: updatedRoom,
@@ -150,7 +180,7 @@ function RoomPage() {
       leftUser: User;
       users: User[];
       room?: SerializeRoom;
-    }) {
+    }) => {
       toast(`${leftUser.nickname}님이 퇴장하셨습니다.`);
       setUsers(allUsers);
 
@@ -164,18 +194,18 @@ function RoomPage() {
           toast.success("새로운 방장이 되었습니다!");
         }
       }
-    }
+    },
 
-    function handleGetRoomInfo({
-      room,
-      users,
+    [SocketEvent.GET_ROOM_INFO]: ({
+      room: roomData,
+      users: usersData,
     }: {
       room: SerializeRoom;
       users: User[];
-    }) {
-      const deserializedRoom = serde.deserializeRoom(room);
+    }) => {
+      const deserializedRoom = serde.deserializeRoom(roomData);
       setRoom(deserializedRoom);
-      setUsers(users);
+      setUsers(usersData);
 
       // 투표가 진행 중이면 타이머 동기화
       if (deserializedRoom.voteStartedAt) {
@@ -194,23 +224,9 @@ function RoomPage() {
           timerReset();
         }
       }
-    }
+    },
 
-    function handleVote(vote: SerializeVote, options: string[]) {
-      setRoom((prev) => {
-        if (!prev) return prev;
-
-        const updatedRoom = { ...prev, vote: serde.deserializeVote(vote) };
-
-        if (prev.rules.notifyWhenVoteChanged && options.length > 0) {
-          toast(`누군가 ${options.join(", ")}에 투표했습니다.`);
-        }
-
-        return updatedRoom;
-      });
-    }
-
-    function handleSetRoomRulesFromServer(rules: RoomRules) {
+    [SocketEvent.SET_ROOM_RULES]: (rules: RoomRules) => {
       setRoom((prev) => {
         if (!prev) return prev;
 
@@ -228,26 +244,26 @@ function RoomPage() {
           voteStartedAt: shouldResetVote ? null : prev.voteStartedAt,
         };
       });
-    }
+    },
 
-    function handleSetRoomSubjectFromServer(subject: string) {
+    [SocketEvent.SET_ROOM_SUBJECT]: (subject: string) => {
       setRoom((prev) => {
         if (!prev) return prev;
         return { ...prev, subject };
       });
       toast(`투표 주제가 변경되었습니다: ${subject}`);
-    }
+    },
 
-    function handleVoteStart() {
+    [SocketEvent.VOTE_START]: () => {
       toast("투표가 시작되었습니다.");
       setIsVoteWinnerModalOpen(false);
       setIsVoteOptionAddModalOpen(false);
       setSelectedOption([]);
       timerReset();
       timerStart();
-    }
+    },
 
-    function handleVoteAddOption(option: string) {
+    [SocketEvent.VOTE_ADD_OPTION]: (option: string) => {
       // custom 타입일 때 room.vote에 새 옵션 추가
       setRoom((prev) => {
         if (!prev) return prev;
@@ -259,28 +275,8 @@ function RoomPage() {
           },
         };
       });
-    }
-
-    socket.on(SocketEvent.JOIN_ROOM, handleJoinRoom);
-    socket.on(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
-    socket.on(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
-    socket.on(SocketEvent.VOTE, handleVote);
-    socket.on(SocketEvent.SET_ROOM_SUBJECT, handleSetRoomSubjectFromServer);
-    socket.on(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
-    socket.on(SocketEvent.VOTE_START, handleVoteStart);
-    socket.on(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
-
-    return () => {
-      socket.off(SocketEvent.JOIN_ROOM, handleJoinRoom);
-      socket.off(SocketEvent.LEAVE_ROOM, handleLeaveRoom);
-      socket.off(SocketEvent.GET_ROOM_INFO, handleGetRoomInfo);
-      socket.off(SocketEvent.VOTE, handleVote);
-      socket.off(SocketEvent.SET_ROOM_SUBJECT, handleSetRoomSubjectFromServer);
-      socket.off(SocketEvent.SET_ROOM_RULES, handleSetRoomRulesFromServer);
-      socket.off(SocketEvent.VOTE_START, handleVoteStart);
-      socket.off(SocketEvent.VOTE_ADD_OPTION, handleVoteAddOption);
-    };
-  }, [socket, isConnected, roomId]);
+    },
+  });
 
   return (
     <>
@@ -389,9 +385,9 @@ function RoomPage() {
         </div>
       </Container>
 
-      {isAdmin && (
+      {isAdmin && room && (
         <RoomRuleSheet
-          rules={room?.rules}
+          rules={room.rules}
           open={isRoomRuleSheetOpen}
           onOpenChange={setIsRoomRuleSheetOpen}
           onChangeRules={handleSetRoomRules}
