@@ -11,9 +11,10 @@ import { useSocket } from "./components/providers/SocketProvider";
 import RoomRuleSheet from "./components/sheets/RoomRuleSheet";
 import RoomUserListSheet from "./components/sheets/RoomUserListSheet";
 import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
 import { Progress } from "./components/ui/progress";
+import { SocketEvent } from "./constants/socket";
 import serde from "./lib/serde";
-import { SocketEvent } from "./lib/socket";
 import { cn } from "./lib/utils";
 import type {
   Room,
@@ -22,7 +23,6 @@ import type {
   SerializeVote,
 } from "./types/room";
 import type { User } from "./types/user";
-import { Input } from "./components/ui/input";
 
 function RoomPage() {
   const navigate = useNavigate();

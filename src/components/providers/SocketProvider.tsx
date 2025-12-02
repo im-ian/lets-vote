@@ -1,7 +1,8 @@
 // SocketContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { SocketEvent, socket } from "../../lib/socket";
+import { SocketEvent } from "@/constants/socket";
+import { socket } from "@/lib/socket";
 
 const SocketContext = createContext({
   socket,

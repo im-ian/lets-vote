@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./components/ui/card";
-import { SocketEvent } from "./lib/socket";
+import { SocketEvent } from "./constants/socket";
 import { cn } from "./lib/utils";
 import type { RoomWithUserCount } from "./types/room";
 

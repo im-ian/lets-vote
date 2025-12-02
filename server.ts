@@ -3,8 +3,8 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
+import { SocketEvent } from "./src/constants/socket";
 import serde from "./src/lib/serde";
-import { SocketEvent } from "./src/lib/socket";
 import type { Room, RoomRules, RoomWithUserCount } from "./src/types/room";
 import type { User } from "./src/types/user";
 

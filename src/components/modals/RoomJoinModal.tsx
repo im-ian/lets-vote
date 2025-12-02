@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SocketEvent } from "@/lib/socket";
+import { SocketEvent } from "@/constants/socket";
 import { useSocket } from "../providers/SocketProvider";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
 
