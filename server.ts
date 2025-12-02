@@ -32,8 +32,9 @@ const defaultRoomRules: RoomRules = {
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", // Vite default port
+    origin: process.env.CLIENT_URL || "*", // 환경 변수로 설정하거나 모든 origin 허용
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -374,7 +375,9 @@ io.on("connection", async (socket) => {
   });
 });
 
-const PORT = 3001;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = process.env.SERVER_PORT || 3001;
+const HOST = process.env.SERVER_HOST || "0.0.0.0";
+
+httpServer.listen(Number(PORT), HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
 });
