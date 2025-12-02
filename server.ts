@@ -15,9 +15,11 @@ const users: Record<
   string,
   {
     nickname: string;
+    clientId?: string;
   }
 > = {};
 const rooms: Room[] = [];
+const clientToSocket: Record<string, string> = {}; // clientId -> socketId 매핑
 
 const defaultRoomRules: RoomRules = {
   voteType: "user",
@@ -123,6 +125,45 @@ io.on("connection", async (socket) => {
   users[socket.id] = {
     nickname: "익명",
   };
+
+  // 클라이언트 ID 등록 처리
+  socket.on("register-client", async (clientId: string) => {
+    console.log(`Registering client ${clientId} for socket ${socket.id}`);
+
+    // 이미 같은 clientId로 연결된 소켓이 있으면 처리
+    const oldSocketId = clientToSocket[clientId];
+    if (oldSocketId && oldSocketId !== socket.id) {
+      console.log(
+        `Found old connection for client ${clientId}: ${oldSocketId}`
+      );
+
+      // 기존 소켓이 속한 방들 확인
+      const oldSocket = io.sockets.sockets.get(oldSocketId);
+      if (oldSocket) {
+        const oldRooms: string[] = [];
+        oldSocket.rooms.forEach((roomId) => {
+          if (roomId !== oldSocketId) {
+            oldRooms.push(roomId);
+          }
+        });
+
+        // 각 방의 유저 목록 업데이트
+        for (const roomId of oldRooms) {
+          await updateRoomUsers(roomId, oldSocketId);
+        }
+
+        // 기존 소켓 강제 종료
+        oldSocket.disconnect(true);
+        delete users[oldSocketId];
+      }
+
+      await cleanupEmptyRooms();
+    }
+
+    // 새 매핑 저장
+    clientToSocket[clientId] = socket.id;
+    users[socket.id].clientId = clientId;
+  });
 
   socket.on(SocketEvent.LOBBY, async () => {
     // 유저가 속한 방 목록 저장 (socket.id 제외)
@@ -315,6 +356,12 @@ io.on("connection", async (socket) => {
     // 각 방의 남은 유저들에게 업데이트된 유저 목록 전송 (users 삭제 전에)
     for (const roomId of userRooms) {
       await updateRoomUsers(roomId, socket.id);
+    }
+
+    // clientToSocket 매핑 정리
+    const clientId = users[socket.id]?.clientId;
+    if (clientId && clientToSocket[clientId] === socket.id) {
+      delete clientToSocket[clientId];
     }
 
     delete users[socket.id];

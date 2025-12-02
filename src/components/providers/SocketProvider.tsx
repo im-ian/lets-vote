@@ -1,5 +1,6 @@
 // SocketContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { SocketEvent, socket } from "../../lib/socket";
 
 const SocketContext = createContext({
@@ -16,6 +17,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("connect", () => {
       setIsConnected(true);
       console.log("Connected");
+
+      // 고유 클라이언트 ID 생성 또는 가져오기
+      let clientId = localStorage.getItem("clientId");
+      if (!clientId) {
+        clientId = uuidv4();
+        localStorage.setItem("clientId", clientId);
+      }
+
+      // 서버에 클라이언트 ID 전송
+      socket.emit("register-client", clientId);
 
       const nickname = sessionStorage.getItem("nickname");
       if (nickname) {
