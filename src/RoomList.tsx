@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "./components/ui/card";
 import { SocketEvent } from "./constants/socket";
+import { useSocketEvents } from "./hooks/useSocketEvent";
 import { cn } from "./lib/utils";
 import type { RoomWithUserCount } from "./types/room";
 
@@ -36,26 +37,26 @@ function RoomList() {
   const [isRoomJoinModalOpen, setIsRoomJoinModalOpen] = useState(false);
   const [isRoomCreateModalOpen, setIsRoomCreateModalOpen] = useState(false);
 
+  // 로비 입장 시 초기 이벤트 전송
   useEffect(() => {
     if (!socket || !isConnected) return;
 
     socket.emit(SocketEvent.LOBBY);
+  }, [socket, isConnected]);
 
-    function handleChangeNickname(nickname: string) {
-      setNickname(nickname);
-    }
-
-    function handleGetRoomList(rooms: RoomWithUserCount[]) {
+  // 소켓 이벤트 핸들러 등록 (useSocketEvents 사용)
+  useSocketEvents({
+    [SocketEvent.GET_ROOM_LIST]: (rooms: RoomWithUserCount[]) => {
       setRooms(rooms);
-    }
+    },
 
-    function handleRoomJoined(roomId: string) {
+    [SocketEvent.JOINED_ROOM]: (roomId: string) => {
       navigate({
         to: `/room/${roomId}`,
       });
-    }
+    },
 
-    function handleRoomJoinError(errorType: string) {
+    [SocketEvent.JOIN_ROOM_ERROR]: (errorType: string) => {
       if (errorType === "room-not-found") {
         toast.error("방을 찾을 수 없습니다.");
       } else if (errorType === "room-password-wrong") {
@@ -63,20 +64,12 @@ function RoomList() {
       } else {
         toast.error("방 참여에 실패했습니다.");
       }
-    }
+    },
 
-    socket.on(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
-    socket.on(SocketEvent.JOINED_ROOM, handleRoomJoined);
-    socket.on(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
-    socket.on(SocketEvent.SET_NICKNAME, handleChangeNickname);
-
-    return () => {
-      socket.off(SocketEvent.GET_ROOM_LIST, handleGetRoomList);
-      socket.off(SocketEvent.JOINED_ROOM, handleRoomJoined);
-      socket.off(SocketEvent.JOIN_ROOM_ERROR, handleRoomJoinError);
-      socket.off(SocketEvent.SET_NICKNAME, handleChangeNickname);
-    };
-  }, [socket, isConnected, navigate]);
+    [SocketEvent.SET_NICKNAME]: (nickname: string) => {
+      setNickname(nickname);
+    },
+  });
 
   return (
     <>
