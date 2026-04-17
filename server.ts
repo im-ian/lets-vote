@@ -130,37 +130,17 @@ io.on("connection", async (socket) => {
   };
 
   // 클라이언트 ID 등록 처리
-  socket.on("register-client", async (clientId: string) => {
+  socket.on("register-client", (clientId: string) => {
     console.log(`Registering client ${clientId} for socket ${socket.id}`);
 
-    // 이미 같은 clientId로 연결된 소켓이 있으면 처리
+    // 이미 같은 clientId로 연결된 소켓이 있으면 강제 종료
+    // (방 유저 목록 업데이트 및 정리는 disconnecting/disconnect 핸들러가 처리)
     const oldSocketId = clientToSocket[clientId];
     if (oldSocketId && oldSocketId !== socket.id) {
       console.log(
         `Found old connection for client ${clientId}: ${oldSocketId}`,
       );
-
-      // 기존 소켓이 속한 방들 확인
-      const oldSocket = io.sockets.sockets.get(oldSocketId);
-      if (oldSocket) {
-        const oldRooms: string[] = [];
-        oldSocket.rooms.forEach((roomId) => {
-          if (roomId !== oldSocketId) {
-            oldRooms.push(roomId);
-          }
-        });
-
-        // 각 방의 유저 목록 업데이트
-        for (const roomId of oldRooms) {
-          await updateRoomUsers(roomId, oldSocketId);
-        }
-
-        // 기존 소켓 강제 종료
-        oldSocket.disconnect(true);
-        delete users[oldSocketId];
-      }
-
-      await cleanupEmptyRooms();
+      io.sockets.sockets.get(oldSocketId)?.disconnect(true);
     }
 
     // 새 매핑 저장
@@ -345,10 +325,9 @@ io.on("connection", async (socket) => {
   // 	console.log("Received pong from:", socket.id);
   // });
 
-  socket.on("disconnect", async () => {
-    console.log("User disconnected:", socket.id);
-
-    // 유저가 속한 방 목록 저장 (socket.id 제외)
+  // disconnect 시점에는 socket.rooms 가 이미 비워지므로
+  // 방 유저 목록 업데이트는 disconnecting 단계에서 수행해야 함
+  socket.on("disconnecting", async () => {
     const userRooms: string[] = [];
     socket.rooms.forEach((roomId) => {
       if (roomId !== socket.id) {
@@ -356,10 +335,13 @@ io.on("connection", async (socket) => {
       }
     });
 
-    // 각 방의 남은 유저들에게 업데이트된 유저 목록 전송 (users 삭제 전에)
     for (const roomId of userRooms) {
       await updateRoomUsers(roomId, socket.id);
     }
+  });
+
+  socket.on("disconnect", async () => {
+    console.log("User disconnected:", socket.id);
 
     // clientToSocket 매핑 정리
     const clientId = users[socket.id]?.clientId;
