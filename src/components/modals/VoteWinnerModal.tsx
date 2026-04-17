@@ -105,7 +105,7 @@ function VoteWinnerModal({
                           .map(
                             (uid) =>
                               users.find((u) => u.id === uid)?.nickname ??
-                              "익명"
+                              "익명",
                           )
                           .join(", ")}
                       </div>

@@ -20,11 +20,7 @@ interface RoomJoinModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function RoomJoinModal({
-  roomId,
-  open,
-  onOpenChange,
-}: RoomJoinModalProps) {
+function RoomJoinModal({ roomId, open, onOpenChange }: RoomJoinModalProps) {
   const { socket } = useSocket();
 
   const [password, setPassword] = useState("");
