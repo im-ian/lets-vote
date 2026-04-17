@@ -40,7 +40,7 @@ const io = new Server(httpServer, {
 
 const getRoomList = async (): Promise<RoomWithUserCount[]> => {
   const sortedRooms = [...rooms].sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   );
 
   return Promise.all(
@@ -50,7 +50,7 @@ const getRoomList = async (): Promise<RoomWithUserCount[]> => {
         ...room,
         userCount: sockets.length,
       };
-    })
+    }),
   );
 };
 
@@ -61,10 +61,12 @@ const updateRoomUsers = async (roomId: string, leftUserId: string) => {
 
   const room = rooms[roomIndex];
   const sockets = await io.in(roomId).fetchSockets();
-  const roomUsers = sockets.map((s) => ({
-    id: s.id,
-    nickname: users[s.id]?.nickname || "익명",
-  }));
+  const roomUsers = sockets
+    .filter((s) => s.id !== leftUserId)
+    .map((s) => ({
+      id: s.id,
+      nickname: users[s.id]?.nickname || "익명",
+    }));
 
   const leftUser = {
     id: leftUserId,
@@ -135,7 +137,7 @@ io.on("connection", async (socket) => {
     const oldSocketId = clientToSocket[clientId];
     if (oldSocketId && oldSocketId !== socket.id) {
       console.log(
-        `Found old connection for client ${clientId}: ${oldSocketId}`
+        `Found old connection for client ${clientId}: ${oldSocketId}`,
       );
 
       // 기존 소켓이 속한 방들 확인
@@ -290,7 +292,7 @@ io.on("connection", async (socket) => {
     io.to(roomId).emit(
       SocketEvent.VOTE,
       serde.serializeVote(room.vote),
-      options
+      options,
     );
   });
 
