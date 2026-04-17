@@ -40,9 +40,26 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.log("Disconnected");
     });
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !socket.connected) {
+        socket.connect();
+      }
+    };
+
+    const handleOnline = () => {
+      if (!socket.connected) {
+        socket.connect();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+
     return () => {
       socket.off("connect");
       socket.off("disconnect");
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
     };
   }, []);
 
