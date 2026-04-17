@@ -20,7 +20,7 @@ interface RoomJoinModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function RoomJoinModal({
+function RoomJoinModal({
   roomId,
   open,
   onOpenChange,

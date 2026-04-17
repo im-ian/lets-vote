@@ -21,7 +21,7 @@ interface NicknameSetModalProps {
   onChangeNickname: (nickname: string) => void;
 }
 
-export function NicknameSetModal({
+function NicknameSetModal({
   open,
   onOpenChange,
   onChangeNickname,

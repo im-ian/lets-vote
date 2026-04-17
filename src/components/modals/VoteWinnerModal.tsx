@@ -14,7 +14,7 @@ interface VoteWinnerModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function VoteWinnerModal({
+function VoteWinnerModal({
   subject,
   rules,
   users,

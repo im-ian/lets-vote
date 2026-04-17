@@ -101,5 +101,3 @@ export function RoomCreateModal({ open, onOpenChange }: RoomCreateModalProps) {
     </Dialog>
   );
 }
-
-export default RoomCreateModal;

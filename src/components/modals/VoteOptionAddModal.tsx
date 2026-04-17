@@ -20,7 +20,7 @@ interface VoteOptionAddModalProps {
   onAddOption: (option: string) => void;
 }
 
-export function VoteOptionAddModal({
+function VoteOptionAddModal({
   options,
   open,
   onOpenChange,
