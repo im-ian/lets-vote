@@ -63,12 +63,19 @@ vi .env
 이후 .env의 파일의 내용을 채워넣습니다. 만약 아무 내용이 없더라도 기본 값으로 실행될꺼에요!
 
 ```shell
+# 웹 클라이언트와 소켓 서버를 한 번에 실행
+npm run dev:all
+```
+
+개별로 실행하고 싶다면 아래처럼 분리해서 실행할 수도 있어요.
+
+```shell
 # 웹 클라이언트 실행
 npm run dev
 # 소켓 서버 실행
-npx run start:server
+npm run start:server
 ```
-만약 env 설정 없이 기본 값으로 실행하셨다면 `http://localhost:3001` 주소로 접속해보세요!
+만약 env 설정 없이 기본 값으로 실행하셨다면 `http://localhost:5173` 으로 접속해보세요! (소켓 서버는 `http://localhost:3001` 에서 동작합니다.)
 
 
 ## 📖 프로젝트 제작 목적
